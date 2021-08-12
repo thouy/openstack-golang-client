@@ -16,7 +16,7 @@ type OpenStackSession struct {
 	Provider         *gophercloud.ProviderClient
 }
 
-func (session OpenStackSession) createSession(params map[string]string) {
+func (session OpenStackSession) CreateSession(params map[string]string) {
 	session.AuthOpts = gophercloud.AuthOptions{
 		IdentityEndpoint: params["identityEndpoint"],
 		Username: params["username"],
@@ -30,5 +30,3 @@ func (session OpenStackSession) createSession(params map[string]string) {
 	}
 	session.Provider = provider
 }
-
-

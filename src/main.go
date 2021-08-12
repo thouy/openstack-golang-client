@@ -30,7 +30,6 @@ func initOpenstackSession(params map[string]string) {
 	osSession.Provider = provider
 }
 
-
 func main() {
 	sessionParams := make(map[string]string, 0)
 	sessionParams["identityEndpoint"] = "http://203.255.255.100:5000"
