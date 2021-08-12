@@ -1,122 +1,59 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
-	"github.com/gophercloud/gophercloud/openstack/blockstorage/v3/volumes"
-	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
-	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
-	"github.com/gophercloud/gophercloud/pagination"
+
+	"openstack-client/block-storage"
+	"openstack-client/compute"
+	"openstack-client/network"
+	"openstack-client/session"
 )
 
+var osSession session.OpenStackSession
 
+func initOpenstackSession(params map[string]string) {
 
-type OpenStackSession struct {
-	identityEndpoint string
-	username string
-	password string
-	domainId string
-	authOpts gophercloud.AuthOptions
-	provider *gophercloud.ProviderClient
-}
-
-var session OpenStackSession
-func initOpenstackSession(param map[string]string) {
-	//session = OpenStackSession{}
-
-	session.authOpts = gophercloud.AuthOptions{
-		IdentityEndpoint: param["identityEndpoint"],
-		Username: param["username"],
-		Password: param["password"],
-		DomainID: param["domainid"],
+	osSession.AuthOpts = gophercloud.AuthOptions{
+		IdentityEndpoint: params["identityEndpoint"],
+		Username: params["username"],
+		Password: params["password"],
+		DomainID: params["domainid"],
 	}
 
-	provider, err := openstack.AuthenticatedClient(session.authOpts)
+	provider, err := openstack.AuthenticatedClient(osSession.AuthOpts)
 	if err != nil {
 		fmt.Println(err)
 	}
-	session.provider = provider
+	osSession.Provider = provider
 }
 
-func getVolumeList(session OpenStackSession) {
-	// 볼륨 목록 조회
-	opts := gophercloud.EndpointOpts{Region: "RegionOne"}
-	client, err := openstack.NewBlockStorageV3(session.provider, opts)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Println("Volume List")
-	volumes.List(client, nil).EachPage(func (page pagination.Page) (bool, error) {
-		s, err := volumes.ExtractVolumes(page)
-		if err != nil {
-			return false, err
-		}
-		doc, err := json.MarshalIndent(s, "", " ")
-		fmt.Println(string(doc))
-
-		return true, nil;
-	})
-}
-
-func getServerList(session OpenStackSession) {
-
-	// 서버 목록 조회
-	opts := gophercloud.EndpointOpts{Region: "RegionOne"}
-	computeClient, computeErr := openstack.NewComputeV2(session.provider, opts)
-	if computeErr != nil {
-		fmt.Println(computeErr)
-	}
-
-	fmt.Println("Server List")
-	servers.List(computeClient, nil).EachPage(func (page pagination.Page) (bool, error) {
-		serverList, err := servers.ExtractServers(page)
-		if err != nil {
-			return false, err
-		}
-
-		doc, err := json.MarshalIndent(serverList, "", " ")
-		fmt.Println(string(doc))
-
-		return true, nil;
-	})
-}
-
-func getNetworkList(session OpenStackSession) {
-
-	// 네트워크 목록 조회
-	opts := gophercloud.EndpointOpts{Region: "RegionOne"}
-	networkClient, networkErr := openstack.NewNetworkV2(session.provider, opts)
-	if networkErr != nil {
-		fmt.Println(networkErr)
-	}
-
-	fmt.Println("Network List")
-	networks.List(networkClient, nil).EachPage(func (page pagination.Page) (bool, error) {
-		networkList, err := networks.ExtractNetworks(page)
-		if err != nil {
-			return false, err
-		}
-
-		doc, err := json.MarshalIndent(networkList, "", " ")
-		fmt.Println(string(doc))
-
-		return true, nil;
-	})
-}
 
 func main() {
-	params := make(map[string]string, 0)
-	params["identityEndpoint"] = "http://203.255.255.100:5000"
-	params["username"] = "paas-ta-monitoring"
-	params["password"] = "paas-ta-monitoring!@#"
-	params["domainid"] = "default"
+	sessionParams := make(map[string]string, 0)
+	sessionParams["identityEndpoint"] = "http://203.255.255.100:5000"
+	sessionParams["username"] = "paas-ta-monitoring"
+	sessionParams["password"] = "paas-ta-monitoring!@#"
+	sessionParams["domainid"] = "default"
 
-	initOpenstackSession(params)
+	initOpenstackSession(sessionParams)
 
-	getVolumeList(session)
-	getServerList(session)
-	getNetworkList(session)
+	block_storage.GetVolumeList(osSession)
+
+	network.GetNetworkList(osSession)
+
+	var params = make(map[string]string, 0)
+	params["status"] = "DOWN"
+	floatingipList := network.GetFloatingIps(osSession, params)
+	fmt.Printf("Floating IP count : %d\n", len(floatingipList))
+
+	securityGroupList := network.GetSecurityGroups(osSession,nil)
+	fmt.Printf("Security group count : %d\n", len(securityGroupList))
+
+	compute.GetServerList(osSession)
+	compute.GetServerDetail(osSession, "9d3ab7fa-fcaf-4750-badb-1e39f785ccb2")
+	compute.GetFlavor(osSession,"4")
+	compute.GetHypervisorStatistics(osSession)
 }
