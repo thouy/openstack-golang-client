@@ -1,10 +1,11 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/gophercloud/gophercloud/pagination"
+	"encoding/json"
 	"reflect"
+
+	"github.com/gophercloud/gophercloud/pagination"
 )
 
 /*************
