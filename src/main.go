@@ -39,9 +39,13 @@ func main() {
 
 	initOpenstackSession(sessionParams)
 
-	block_storage.GetVolumeList(osSession)
+	var volumeParams = make(map[string]string, 0)
+	volumeList := block_storage.GetVolumeList(osSession, volumeParams)
+	fmt.Printf("Volumes count : %d\n", len(volumeList))
 
-	network.GetNetworkList(osSession)
+	var networkParams = make(map[string]string, 0)
+	networkList := network.GetNetworkList(osSession, networkParams)
+	fmt.Printf("Floating IP count : %d\n", len(networkList))
 
 	var params = make(map[string]string, 0)
 	params["status"] = "DOWN"
@@ -51,7 +55,8 @@ func main() {
 	securityGroupList := network.GetSecurityGroups(osSession,nil)
 	fmt.Printf("Security group count : %d\n", len(securityGroupList))
 
-	compute.GetServerList(osSession)
+	serverParams := make(map[string]string, 0)
+	compute.GetServerList(osSession, serverParams)
 	compute.GetServerDetail(osSession, "9d3ab7fa-fcaf-4750-badb-1e39f785ccb2")
 	compute.GetFlavor(osSession,"4")
 	compute.GetHypervisorStatistics(osSession)

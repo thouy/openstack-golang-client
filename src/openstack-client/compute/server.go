@@ -17,7 +17,15 @@ import (
 	Compute (Nova)
 *********************/
 
-func GetServerList(session session.OpenStackSession) {
+/**
+	@parameter
+		- params [map]
+			- host [string] : 호스트 이름
+			- name [string] : 서버 이름
+			- status [string] : 상태
+			- tenantId [string] : 테넌트 ID
+ */
+func GetServerList(session session.OpenStackSession, params map[string]string) []interface{} {
 	// 서버 목록 조회
 	opts := gophercloud.EndpointOpts{
 		Region: "RegionOne",
@@ -37,8 +45,43 @@ func GetServerList(session session.OpenStackSession) {
 		utils.PrintJson(serverList)
 		return true, nil;
 	})
+
+	var listOpts servers.ListOpts
+	if params != nil {
+		host, ok := params["host"]
+		if ok {
+			listOpts.Host = host
+		}
+		name, ok := params["name"]
+		if ok {
+			listOpts.Name = name
+		}
+		status, ok := params["status"]
+		if ok {
+			listOpts.Status = status
+		}
+		tenantId, ok := params["tenantId"]
+		if ok {
+			listOpts.TenantID = tenantId
+		}
+	}
+
+	result := servers.List(computeClient, listOpts)
+	resultPages, err := result.AllPages()
+	if err != nil {
+		fmt.Println(err)
+	}
+	resultBody := resultPages.GetBody()
+
+	list := resultBody.(map[string][]interface{})["servers"]
+
+	return list
 }
 
+/**
+	@parameter
+		- serverId [string] : Server ID
+ */
 func GetServerDetail(session session.OpenStackSession, serverId string) {
 	opts := gophercloud.EndpointOpts{
 		Region: "RegionOne",
@@ -54,6 +97,10 @@ func GetServerDetail(session session.OpenStackSession, serverId string) {
 	utils.PrintJson(result.Body)
 }
 
+/**
+	params
+		- flavorId [string] : Flavor ID
+ */
 func GetFlavor(session session.OpenStackSession, flavorId string) {
 	// 네트워크 목록 조회
 	opts := gophercloud.EndpointOpts{Region: "RegionOne"}
@@ -63,6 +110,7 @@ func GetFlavor(session session.OpenStackSession, flavorId string) {
 	}
 
 	result := flavors.Get(flavorClient, flavorId)
+
 
 	utils.PrintJson(result.Body)
 }

@@ -8,10 +8,8 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/layer3/floatingips"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
 	"github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
-	"github.com/gophercloud/gophercloud/pagination"
 
 	"openstack-client/session"
-	"openstack-client/utils"
 )
 
 
@@ -19,26 +17,59 @@ import (
 	Network (Neutron)
 ************************/
 
-func GetNetworkList(session session.OpenStackSession) {
+/**
+	params
+		- projectId
+ */
+func GetNetworkList(session session.OpenStackSession, params map[string]string) []interface{} {
 	// 네트워크 목록 조회
 	opts := gophercloud.EndpointOpts{Region: "RegionOne"}
-	networkClient, networkErr := openstack.NewNetworkV2(session.Provider, opts)
-	if networkErr != nil {
-		fmt.Println(networkErr)
+	networkClient, err := openstack.NewNetworkV2(session.Provider, opts)
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	fmt.Println("Network List")
-	networks.List(networkClient, nil).EachPage(func (page pagination.Page) (bool, error) {
-		networkList, err := networks.ExtractNetworks(page)
-		if err != nil {
-			return false, err
-		}
+	//fmt.Println("Network List")
+	//networks.List(networkClient, nil).EachPage(func (page pagination.Page) (bool, error) {
+	//	networkList, err := networks.ExtractNetworks(page)
+	//	if err != nil {
+	//		return false, err
+	//	}
+	//
+	//	utils.PrintJson(networkList)
+	//	return true, nil;
+	//})
 
-		utils.PrintJson(networkList)
-		return true, nil;
-	})
+	var listOpts networks.ListOpts
+	if params != nil {
+		projectId, ok := params["projectId"]
+		if ok {
+			listOpts.ProjectID = projectId
+		}
+		status, ok := params["status"]
+		if ok {
+			listOpts.Status = status
+		}
+	}
+	result := networks.List(networkClient, listOpts)
+	resultPages, err := result.AllPages()
+	if err != nil {
+		fmt.Println(err)
+	}
+	resultBody := resultPages.GetBody()
+	//fmt.Println(reflect.TypeOf(resultBody))
+	//fmt.Println(result3)
+
+	networkList := resultBody.(map[string][]interface{})["networks"]
+	//fmt.Println(floatingIpList)
+
+	return networkList
 }
 
+/**
+	params
+		- projectId
+*/
 func GetFloatingIps(session session.OpenStackSession, params map[string]string) []interface{} {
 	// Floating IP 조회
 	opts := gophercloud.EndpointOpts{Region: "RegionOne"}
@@ -49,7 +80,7 @@ func GetFloatingIps(session session.OpenStackSession, params map[string]string) 
 
 	var listOpts floatingips.ListOpts
 	if params != nil {
-		projectId, ok := params["projectid"]
+		projectId, ok := params["projectId"]
 		if ok {
 			listOpts.ProjectID = projectId
 		}
@@ -71,6 +102,10 @@ func GetFloatingIps(session session.OpenStackSession, params map[string]string) 
 	return floatingIpList
 }
 
+/**
+	params
+		- projectId
+*/
 func GetSecurityGroups(session session.OpenStackSession, params map[string]string) []interface{} {
 	// Security Group 조회
 	opts := gophercloud.EndpointOpts{Region: "RegionOne"}
