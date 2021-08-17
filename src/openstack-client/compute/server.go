@@ -23,9 +23,9 @@ import (
 			- host [string] : 호스트 이름
 			- name [string] : 서버 이름
 			- status [string] : 상태
-			- tenantId [string] : 테넌트 ID
+			- tenantId [string] : 프로젝트 ID
  */
-func GetServerList(session session.OpenStackSession, params map[string]string) []interface{} {
+func GetServerList(session session.OpenStackSession, params map[string]interface{}) []interface{} {
 	// 서버 목록 조회
 	opts := gophercloud.EndpointOpts{
 		Region: "RegionOne",
@@ -48,21 +48,25 @@ func GetServerList(session session.OpenStackSession, params map[string]string) [
 
 	var listOpts servers.ListOpts
 	if params != nil {
-		host, ok := params["host"]
+		host, ok := params["host"].(string)
 		if ok {
 			listOpts.Host = host
 		}
-		name, ok := params["name"]
+		name, ok := params["name"].(string)
 		if ok {
 			listOpts.Name = name
 		}
-		status, ok := params["status"]
+		status, ok := params["status"].(string)
 		if ok {
 			listOpts.Status = status
 		}
-		tenantId, ok := params["tenantId"]
+		tenantId, ok := params["tenantId"].(string)
 		if ok {
 			listOpts.TenantID = tenantId
+		}
+		allTenants, ok := params["allTenants"].(bool)
+		if ok {
+			listOpts.AllTenants = allTenants
 		}
 	}
 
