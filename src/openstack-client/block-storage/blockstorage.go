@@ -47,7 +47,13 @@ func GetVolumeList(session session.OpenStackSession, params map[string]string) [
 		}
 	}
 	resultPager := volumes.List(client, listOpts)
+	if resultPager.Err != nil {
+		fmt.Println(resultPager.Err.Error())
+	}
 	resultPages, err := resultPager.AllPages()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	resultBody := resultPages.GetBody()
 	//fmt.Println(reflect.TypeOf(resultBody))
 	//fmt.Println(result3)
